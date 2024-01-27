@@ -6,8 +6,8 @@ app = FastAPI()
 
 @app.get('/')
 def message():
-    return "helllo dude"
+    return "Welcome to wattcher"
 
 @app.post('/cfe-scrapper/')
-def run_cfe_scrapper(username: str = Body(), service: str = Body()):
-    return execute_scrapper()
+def run_cfe_scrapper(username: str = Body(), key: str = Body(), service: str = Body()):
+    return execute_scrapper(username, key, service)
