@@ -26,19 +26,19 @@ chrome_options.add_argument("enable-automation")
 chrome_options.add_argument("--disable-infobars")
 chrome_options.add_experimental_option("prefs",{"download.default_directory" : os.environ['DOWNLOAD_PATH']})
 
-# s3 = boto3.resource('s3')
-
-# for bucket in s3.buckets.all():
-#     print(bucket.name)
-
 def execute_scrapper(username: str, key: str, service: str):
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=chrome_options)
+
+    s3 = boto3.client('s3')
+
+    # for bucket in s3.buckets.all():
+    #     print(bucket.name)
 
     url_login = 'https://app.cfe.mx/Aplicaciones/CCFE/MiEspacio/Login.aspx'
 
     driver.get(url_login)
 
-    # Iniciar sesión en el sitio de CFE
+    #Iniciar sesión en el sitio de CFE
     driver.find_element(By.NAME, 'ctl00$MainContent$txtUsuario').send_keys(username)
     driver.find_element(By.NAME, 'ctl00$MainContent$txtPassword').send_keys(key)
     driver.find_element(By.CSS_SELECTOR, 'input[type="submit" i]').click()
@@ -63,7 +63,13 @@ def execute_scrapper(username: str, key: str, service: str):
                 driver.find_element(By.ID, f'ctl00_MainContent_gvFacturasUsuario_ctl0{n}_lnkDescargaXML').click()
             else:
                 driver.find_element(By.ID, f'ctl00_MainContent_gvFacturasUsuario_ctl{n}_lnkDescargaXML').click()
-            print(f'Downloaded file: {n}')
+
+            statement_folio = driver.find_element(By.XPATH, f"//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr[{n}]/td[2]").text
+            doc_name = f'WA-{statement_folio}.xml'
+            print(f'Downloaded file: {doc_name}')
+            time.sleep(3)
+            with open(f"{os.environ['DOWNLOAD_PATH']}/{doc_name}", "rb") as f:
+                s3.upload_fileobj(f,"wattcher-test",doc_name)
         except UnexpectedAlertPresentException:
             print(f'Error with file: {n}')
             alert_obj = driver.switch_to.alert
