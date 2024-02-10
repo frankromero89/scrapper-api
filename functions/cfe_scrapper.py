@@ -69,7 +69,8 @@ def execute_scrapper(username: str, key: str, service: str):
             print(f'Downloaded file: {doc_name}')
             time.sleep(3)
             with open(f"{os.environ['DOWNLOAD_PATH']}/{doc_name}", "rb") as f:
-                s3.upload_fileobj(f,"wattcher-test",doc_name)
+
+                s3.upload_fileobj(f,os.environ['BUCKET_FILES_NAME'],doc_name)
         except UnexpectedAlertPresentException:
             print(f'Error with file: {n}')
             alert_obj = driver.switch_to.alert
@@ -81,6 +82,3 @@ def execute_scrapper(username: str, key: str, service: str):
     driver.quit()
 
     return {'success': True}
-
-# if __name__ == '__main__': 
-#     print(execute_scrapper()) 
