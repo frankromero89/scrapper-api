@@ -1,7 +1,6 @@
 import time
 import os
 from dotenv import load_dotenv
-import logging
 import boto3
 
 from selenium import webdriver
@@ -54,31 +53,29 @@ def execute_scrapper(username: str, key: str, service: str):
     us.select_by_value(service)
 
     # Descargar la tabla de "Otras Facturas"
-    # statements = driver.find_elements(By.XPATH, "//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr")
     row = len(driver.find_elements(By.XPATH, "//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr"))
 
     for n in range(2, row):
         try:
-            if n < 10:
-                driver.find_element(By.ID, f'ctl00_MainContent_gvFacturasUsuario_ctl0{n}_lnkDescargaXML').click()
-            else:
-                driver.find_element(By.ID, f'ctl00_MainContent_gvFacturasUsuario_ctl{n}_lnkDescargaXML').click()
+            if driver.find_element(By.XPATH, f"//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr[{n}]/td[last()]").text == 'OCR':
+                if n < 10:
+                    driver.find_element(By.ID, f'ctl00_MainContent_gvFacturasUsuario_ctl0{n}_lnkDescargaXML').click()
+                else:
+                    driver.find_element(By.ID, f'ctl00_MainContent_gvFacturasUsuario_ctl{n}_lnkDescargaXML').click()
 
-            statement_folio = driver.find_element(By.XPATH, f"//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr[{n}]/td[2]").text
-            doc_name = f'WA-{statement_folio}.xml'
-            print(f'Downloaded file: {doc_name}')
-            time.sleep(3)
-            with open(f"{os.environ['DOWNLOAD_PATH']}/{doc_name}", "rb") as f:
+                statement_folio = driver.find_element(By.XPATH, f"//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr[{n}]/td[2]").text
+                doc_name = f'WA-{statement_folio}.xml'
+                print(f'Downloaded file: {doc_name}')
+                time.sleep(1)
+                with open(f"{os.environ['DOWNLOAD_PATH']}/{doc_name}", "rb") as f:
 
-                s3.upload_fileobj(f,os.environ['BUCKET_FILES_NAME'],doc_name)
+                    s3.upload_fileobj(f,os.environ['BUCKET_FILES_NAME'],doc_name)
+            continue
         except UnexpectedAlertPresentException:
             print(f'Error with file: {n}')
             alert_obj = driver.switch_to.alert
             alert_obj.accept()
             pass
-
-    time.sleep(10)
-
+    time.sleep(2)
     driver.quit()
-
     return {'success': True}
