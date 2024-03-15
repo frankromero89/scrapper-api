@@ -68,8 +68,7 @@ def execute_scrapper(username: str, key: str, service: str):
                 print(f'Downloaded file: {doc_name}')
                 time.sleep(1)
                 with open(f"{os.environ['DOWNLOAD_PATH']}/{doc_name}", "rb") as f:
-
-                    s3.upload_fileobj(f,os.environ['BUCKET_FILES_NAME'],doc_name)
+                    s3.upload_fileobj(f,"wattcher-statements",f"{service}/{doc_name}")
             continue
         except UnexpectedAlertPresentException:
             print(f'Error with file: {n}')
