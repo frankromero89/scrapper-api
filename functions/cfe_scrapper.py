@@ -2,6 +2,7 @@ import time
 import os
 from dotenv import load_dotenv
 import boto3
+import json
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -63,8 +64,9 @@ def execute_scrapper(username: str, key: str, service: str):
                 else:
                     driver.find_element(By.ID, f'ctl00_MainContent_gvFacturasUsuario_ctl{n}_lnkDescargaXML').click()
 
+                serie = driver.find_element(By.XPATH, f"//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr[{n}]/td[1]").text
                 statement_folio = driver.find_element(By.XPATH, f"//*[@id='ctl00_MainContent_gvFacturasUsuario']/tbody/tr[{n}]/td[2]").text
-                doc_name = f'WA-{statement_folio}.xml'
+                doc_name = f'{serie}-{statement_folio}.xml'
                 print(f'Downloaded file: {doc_name}')
                 time.sleep(1)
                 with open(f"{os.environ['DOWNLOAD_PATH']}/{doc_name}", "rb") as f:
@@ -75,6 +77,10 @@ def execute_scrapper(username: str, key: str, service: str):
             alert_obj = driver.switch_to.alert
             alert_obj.accept()
             pass
-    time.sleep(2)
-    driver.quit()
+    lambda_function = boto3.client('lambda', region_name="us-west-1")
+    response = lambda_function.invoke(
+        FunctionName='wattcher-data-statements',
+        Payload= json.dumps({'service': service})
+    )
+    print(f'lamda response: {response}')
     return {'success': True}
